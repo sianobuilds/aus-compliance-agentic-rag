@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Australian Regulatory Compliance AI Auditor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .agent-active { animation: pulse-glow 1.5s infinite; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
+
+  <!-- Top Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-scale-balanced"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-100 leading-tight">AUS-Compliance Agentic RAG</h1>
+          <p class="text-xs text-slate-400">EPBC Act 1999 & NGER Statutory Verification System</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          State Graph: Ready
+        </span>
+        <span class="text-xs text-slate-500 border-l border-slate-800 pl-4">Jurisdiction: Commonwealth of Australia</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+    
+    <!-- Left Column: Input & Agent Graph Visualizer (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col space-y-6">
+      
+      <!-- Input Card -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-file-pen text-cyan-400"></i> Corporate Inquiry Payload
+          </h2>
+          <button onclick="loadSamplePrompt()" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
+            Load Sample Case
+          </button>
+        </div>
+
+        <textarea id="inquiryInput" rows="5" 
+          class="w-full bg-slate-950 border border-slate-700/80 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-600" 
+          placeholder="Describe project parameters, emissions, location, or mining scope..."></textarea>
+
+        <button id="runBtn" onclick="executeAudit()" 
+          class="mt-4 w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-600/30">
+          <span>Run LangGraph Compliance Audit</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Live Agent State Monitor -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl flex-1 flex flex-col justify-between">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-network-wired text-blue-400"></i> Self-Reflective Graph Workflow
+        </h2>
+
+        <div class="space-y-4">
+          <!-- Step 1 -->
+          <div id="step-retrieve" class="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition-all">
+            <div class="flex items-center space-x-3">
+              <div class="step-icon h-7 w-7 rounded-md bg-slate-800 flex items-center justify-center text-xs text-slate-400">1</div>
+              <div>
+                <p class="text-sm font-medium text-slate-300">Vector Retrieval (EPBC/NGER)</p>
+                <p class="text-xs text-slate-500">ChromaDB semantic search k=3</p>
+              </div>
+            </div>
+            <span class="status-badge text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+          </div>
+
+          <!-- Step 2 -->
+          <div id="step-grade" class="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition-all">
+            <div class="flex items-center space-x-3">
+              <div class="step-icon h-7 w-7 rounded-md bg-slate-800 flex items-center justify-center text-xs text-slate-400">2</div>
+              <div>
+                <p class="text-sm font-medium text-slate-300">Self-Reflective Grader</p>
+                <p class="text-xs text-slate-500">Filter noise & hallucination risks</p>
+              </div>
+            </div>
+            <span class="status-badge text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+          </div>
+
+          <!-- Step 3 -->
+          <div id="step-generate" class="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition-all">
+            <div class="flex items-center space-x-3">
+              <div class="step-icon h-7 w-7 rounded-md bg-slate-800 flex items-center justify-center text-xs text-slate-400">3</div>
+              <div>
+                <p class="text-sm font-medium text-slate-300">Report Synthesis</p>
+                <p class="text-xs text-slate-500">Statutory guidance grounding</p>
+              </div>
+            </div>
+            <span class="status-badge text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
+          <span>Query Loops: <span id="loopCount" class="text-slate-300 font-mono">0</span></span>
+          <span id="rephrasedIndicator" class="hidden text-amber-400">Query Rewritten</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Audit Report Output (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl flex-1 flex flex-col">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+          <div class="flex items-center space-x-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">
+              <i class="fa-solid fa-clipboard-check text-emerald-400"></i> Legal Assessment Report
+            </h2>
+            <span id="complianceBadge" class="hidden px-2.5 py-0.5 text-xs font-bold rounded-full"></span>
+          </div>
+          <span class="text-xs text-slate-500 font-mono" id="timestamp"></span>
+        </div>
+
+        <div id="reportContainer" class="flex-1 bg-slate-950 rounded-lg p-6 border border-slate-800/80 overflow-y-auto font-mono text-sm leading-relaxed text-slate-300">
+          <div class="h-full flex flex-col items-center justify-center text-slate-600 space-y-3">
+            <i class="fa-solid fa-scale-unbalanced-flip text-4xl"></i>
+            <p class="text-sm">Submit an inquiry on the left to trigger the autonomous compliance audit pipeline.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    function loadSamplePrompt() {
+      document.getElementById('inquiryInput').value = 
+        "We are initiating an iron-ore extraction project in Western Australia that will emit 30 kilotonnes of CO2 per year. What are our EPBC and NGER reporting obligations?";
+    }
+
+    async function executeAudit() {
+      const question = document.getElementById('inquiryInput').value.trim();
+      if(!question) return alert("Please enter a regulatory question.");
+
+      const runBtn = document.getElementById('runBtn');
+      const reportContainer = document.getElementById('reportContainer');
+      const badge = document.getElementById('complianceBadge');
+      
+      runBtn.disabled = true;
+      runBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Processing Multi-Agent Graph...';
+
+      // UI Stage 1: Retrieving
+      setStepState('step-retrieve', 'active', 'Retrieving...');
+      setStepState('step-grade', 'idle', 'Idle');
+      setStepState('step-generate', 'idle', 'Idle');
+      
+      reportContainer.innerHTML = '<div class="text-cyan-400 animate-pulse">Running LangGraph agent nodes... Scanning statutory embeddings...</div>';
+
+      try {
+        // Stage 2 sim for UI snappiness
+        setTimeout(() => setStepState('step-grade', 'active', 'Evaluating...'), 800);
+        setTimeout(() => setStepState('step-generate', 'active', 'Synthesizing...'), 1600);
+
+        const res = await fetch('/api/v1/compliance/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: question })
+        });
+
+        const data = await res.json();
+
+        // Mark Completed
+        setStepState('step-retrieve', 'done', 'Completed');
+        setStepState('step-grade', 'done', 'Completed');
+        setStepState('step-generate', 'done', 'Done');
+
+        // Render Data
+        document.getElementById('loopCount').innerText = data.retry_count;
+        if(data.rephrased_query) {
+          document.getElementById('rephrasedIndicator').classList.remove('hidden');
+        }
+
+        badge.classList.remove('hidden', 'bg-rose-500/20', 'text-rose-400', 'border-rose-500/30', 'bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
+        if(data.compliance_flag === 'ACTION_REQUIRED') {
+          badge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30';
+          badge.innerText = '⚠️ ACTION REQUIRED';
+        } else {
+          badge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+          badge.innerText = '✓ STATUTORY COMPLIANT';
+        }
+
+        // Format Markdown-like text
+        reportContainer.innerHTML = `<div class="whitespace-pre-wrap font-sans text-slate-200 space-y-4">${data.report}</div>`;
+        document.getElementById('timestamp').innerText = new Date().toLocaleTimeString();
+
+      } catch (err) {
+        reportContainer.innerHTML = `<div class="text-rose-400">Execution Error: ${err.message}</div>`;
+      } finally {
+        runBtn.disabled = false;
+        runBtn.innerHTML = '<span>Run LangGraph Compliance Audit</span><i class="fa-solid fa-arrow-right text-xs"></i>';
+      }
+    }
+
+    function setStepState(elementId, state, label) {
+      const el = document.getElementById(elementId);
+      const badge = el.querySelector('.status-badge');
+      badge.innerText = label;
+
+      if(state === 'active') {
+        el.className = 'flex items-center justify-between p-3 rounded-lg border border-cyan-500/50 bg-cyan-950/20 agent-active transition-all';
+        badge.className = 'status-badge text-xs px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-medium';
+      } else if(state === 'done') {
+        el.className = 'flex items-center justify-between p-3 rounded-lg border border-emerald-500/40 bg-slate-950/80 transition-all';
+        badge.className = 'status-badge text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-medium';
+      } else {
+        el.className = 'flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-950/60 transition-all';
+        badge.className = 'status-badge text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400';
+      }
+    }
+  </script>
+</body>
+</html>
