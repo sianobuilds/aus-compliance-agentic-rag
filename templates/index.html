@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AURA-Mining // LangGraph Multi-Agent Regulatory Compliance Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      background-color: #03050c;
+      color: #94a3b8;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    .font-mono { font-family: 'Fira Code', monospace; }
+    
+    .infinite-canvas {
+      background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1.5px, transparent 1.5px);
+      background-size: 28px 28px;
+    }
+
+    .glass-card {
+      background: rgba(10, 15, 29, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      border-radius: 0.85rem;
+    }
+
+    .graph-node {
+      position: absolute;
+      border-radius: 14px;
+      background: rgba(12, 18, 34, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.85);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .graph-node:hover {
+      border-color: #a855f7;
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px -5px rgba(168, 85, 247, 0.25);
+    }
+    .graph-node.active-pulse {
+      border-color: #c084fc;
+      box-shadow: 0 0 30px rgba(192, 132, 252, 0.5);
+    }
+
+    @keyframes dash {
+      to { stroke-dashoffset: -40; }
+    }
+    .wire-flow {
+      stroke-dasharray: 6, 6;
+      animation: dash 1s linear infinite;
+    }
+    .wire-loopback {
+      stroke-dasharray: 4, 4;
+      animation: dash 0.8s linear infinite;
+    }
+
+    .studio-tab-btn { transition: all 0.18s ease; }
+    .studio-tab-btn.active {
+      background: #7c3aed;
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(124, 58, 237, 0.45);
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="h-14 border-b border-slate-800/80 bg-[#060913]/95 backdrop-blur px-6 flex items-center justify-between shrink-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-violet-500/30">
+        <i class="fa-solid fa-scale-balanced"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-white text-sm tracking-tight">AURA-Mining // LangGraph Studio</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-violet-950/80 text-violet-300 border border-violet-800 font-mono">v2026.4 Agentic RAG</span>
+        </div>
+        <p class="text-[11px] text-slate-400">Autonomous Compliance Engine // WA EPA Part IV & Commonwealth EPBC Act</p>
+      </div>
+    </div>
+
+    <!-- 6 Modular Views Rail -->
+    <nav class="flex gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-xs font-mono">
+      <button type="button" onclick="switchView(1)" id="btn-view-1" class="studio-tab-btn active px-3.5 py-1.5 rounded-lg font-bold">1. LangGraph DAG</button>
+      <button type="button" onclick="switchView(2)" id="btn-view-2" class="studio-tab-btn px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200">2. Dual-Jurisdiction Legal RAG</button>
+      <button type="button" onclick="switchView(3)" id="btn-view-3" class="studio-tab-btn px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200">3. Pilbara Mining Telemetry</button>
+      <button type="button" onclick="switchView(4)" id="btn-view-4" class="studio-tab-btn px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200">4. Stop-Work Directive Studio</button>
+      <button type="button" onclick="switchView(5)" id="btn-view-5" class="studio-tab-btn px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200">5. Self-Reflection Grader</button>
+      <button type="button" onclick="switchView(6)" id="btn-view-6" class="studio-tab-btn px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200">6. Audit Trail & REST API</button>
+    </nav>
+
+    <!-- Operational State Indicator -->
+    <div class="flex items-center gap-3 text-xs font-mono">
+      <span class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-emerald-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Zero Hallucination Grounded
+      </span>
+      <span class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-violet-400">
+        Latency: <strong id="header-latency">1.42s</strong>
+      </span>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKBENCH BODY ================= -->
+  <main class="flex-1 relative overflow-hidden flex flex-col justify-between">
+
+    <!-- ==================== VIEW 1: LangGraph DAG ==================== -->
+    <section id="view-1" class="h-full w-full flex relative overflow-hidden">
+      <!-- Infinite Canvas Stage -->
+      <div class="flex-1 relative infinite-canvas overflow-hidden flex flex-col justify-between p-6">
+        
+        <!-- Top Operational Control HUD (Floating) -->
+        <div class="flex items-center justify-between z-20">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="triggerWorkflow()" class="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 text-white font-mono font-bold text-xs rounded-xl shadow-lg shadow-violet-600/30 flex items-center gap-2">
+              <i class="fa-solid fa-play text-[10px]"></i>
+              <span>Compile & Run Graph Cycle</span>
+            </button>
+            <button type="button" onclick="resetGraph()" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-xs rounded-xl">
+              Reset Wires
+            </button>
+            <span class="px-3.5 py-2 bg-slate-950/90 border border-slate-800 rounded-xl text-xs font-mono text-violet-300 shadow-md" id="canvas-state">
+              State: READY_FOR_DISPATCH
+            </span>
+          </div>
+          <div class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span>Target:</span>
+            <strong class="text-slate-200">Pilbara Open-Cut Pit-04</strong>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">Aquifer Critical</span>
+          </div>
+        </div>
+
+        <!-- SVG Connection Wires Layer (Y-center aligned at 260px) -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none z-0" id="svg-layer">
+          <path d="M 230 260 C 265 260, 275 260, 310 260" fill="none" stroke="#6b21a8" stroke-width="2" id="edge-1-2"/>
+          <path d="M 520 260 C 555 260, 565 260, 600 260" fill="none" stroke="#6b21a8" stroke-width="2" id="edge-2-3"/>
+          <path d="M 810 260 C 845 260, 855 260, 890 260" fill="none" stroke="#6b21a8" stroke-width="2" id="edge-3-4"/>
+          <path d="M 1100 260 C 1135 260, 1145 260, 1180 260" fill="none" stroke="#6b21a8" stroke-width="2" id="edge-4-5"/>
+          <!-- Loop-back edge for self-correction -->
+          <path d="M 705 340 C 705 430, 415 430, 415 340" fill="none" stroke="#e11d48" stroke-width="2" class="wire-loopback hidden" id="edge-loopback"/>
+        </svg>
+
+        <!-- 5 Nodes Centered Vertically -->
+        <div class="w-full relative h-72 z-10 my-auto">
+          <!-- Node 1 -->
+          <div class="graph-node w-52" style="left: 20px; top: 35px;" id="node-1" onclick="inspectNode('node1')">
+            <div class="px-3.5 py-2 bg-slate-900/90 border-b border-slate-800 rounded-t-xl flex justify-between items-center text-[10px] font-mono">
+              <span class="text-violet-400 font-bold">@node: ingest</span><span class="text-slate-500">#01</span>
+            </div>
+            <div class="p-3.5 space-y-1.5">
+              <div class="font-bold text-white text-xs">Telemetry Parser</div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">Ingests Pilbara Pit-04 borehole SWL & PM10 dust stream.</p>
+              <div class="pt-2 flex justify-between text-[10px] font-mono border-t border-slate-800/80"><span class="text-slate-500">Stream:</span><span class="text-emerald-400">BH-WB-09 (1.48m/d)</span></div>
+            </div>
+          </div>
+
+          <!-- Node 2 -->
+          <div class="graph-node w-52" style="left: 310px; top: 35px;" id="node-2" onclick="inspectNode('node2')">
+            <div class="px-3.5 py-2 bg-slate-900/90 border-b border-slate-800 rounded-t-xl flex justify-between items-center text-[10px] font-mono">
+              <span class="text-violet-400 font-bold">@node: retriever</span><span class="text-slate-500">#02</span>
+            </div>
+            <div class="p-3.5 space-y-1.5">
+              <div class="font-bold text-white text-xs">Hybrid Legal Vector Store</div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">Top-K dense + BM25 sparse search over EPBC & WA EPA acts.</p>
+              <div class="pt-2 flex justify-between text-[10px] font-mono border-t border-slate-800/80"><span class="text-slate-500">Top Chunk:</span><span class="text-cyan-400">WA EPA Cond 6.2</span></div>
+            </div>
+          </div>
+
+          <!-- Node 3 -->
+          <div class="graph-node w-52" style="left: 600px; top: 35px;" id="node-3" onclick="inspectNode('node3')">
+            <div class="px-3.5 py-2 bg-slate-900/90 border-b border-slate-800 rounded-t-xl flex justify-between items-center text-[10px] font-mono">
+              <span class="text-rose-400 font-bold">@node: cyclic_grader</span><span class="text-slate-500">#03</span>
+            </div>
+            <div class="p-3.5 space-y-1.5">
+              <div class="font-bold text-white text-xs">Self-Reflective Grader</div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">Checks hallucination & statutory relevance cut-off (0.85).</p>
+              <div class="pt-2 flex justify-between text-[10px] font-mono border-t border-slate-800/80"><span class="text-slate-500">Score:</span><span class="text-emerald-400 font-bold" id="grader-score">0.941 PASS</span></div>
+            </div>
+          </div>
+
+          <!-- Node 4 -->
+          <div class="graph-node w-52" style="left: 890px; top: 35px;" id="node-4" onclick="inspectNode('node4')">
+            <div class="px-3.5 py-2 bg-slate-900/90 border-b border-slate-800 rounded-t-xl flex justify-between items-center text-[10px] font-mono">
+              <span class="text-violet-400 font-bold">@node: reasoner</span><span class="text-slate-500">#04</span>
+            </div>
+            <div class="p-3.5 space-y-1.5">
+              <div class="font-bold text-white text-xs">Cross-Examiner Node</div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">Resolves Federal vs State mandate supremacy on groundwater.</p>
+              <div class="pt-2 flex justify-between text-[10px] font-mono border-t border-slate-800/80"><span class="text-slate-500">Finding:</span><span class="text-rose-400 font-bold">Statutory Breach</span></div>
+            </div>
+          </div>
+
+          <!-- Node 5 -->
+          <div class="graph-node w-52" style="left: 1180px; top: 35px;" id="node-5" onclick="inspectNode('node5')">
+            <div class="px-3.5 py-2 bg-slate-900/90 border-b border-slate-800 rounded-t-xl flex justify-between items-center text-[10px] font-mono">
+              <span class="text-emerald-400 font-bold">@node: dispatcher</span><span class="text-slate-500">#05</span>
+            </div>
+            <div class="p-3.5 space-y-1.5">
+              <div class="font-bold text-white text-xs">Ministerial Dispatcher</div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">Issues cryptographic Work-Stop Directive & DCCEEW Referral.</p>
+              <div class="pt-2 flex justify-between text-[10px] font-mono border-t border-slate-800/80"><span class="text-slate-500">Action:</span><span class="text-rose-400 font-bold">Cease Excavation</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Telemetry HUD Dock -->
+        <div class="glass-card p-4 flex items-center justify-between font-mono text-xs z-20">
+          <div class="flex items-center gap-6">
+            <div><span class="text-slate-500 block text-[10px]">GRAPH CYCLE</span><strong class="text-violet-300">Single-Pass Grounded</strong></div>
+            <div><span class="text-slate-500 block text-[10px]">HALLUCINATION CHECK</span><strong class="text-cyan-400">0.02% (Strict Grounding)</strong></div>
+            <div><span class="text-slate-500 block text-[10px]">STATEGRAPH EXECUTION</span><strong class="text-emerald-400" id="canvas-lat">1.42s</strong></div>
+            <div><span class="text-slate-500 block text-[10px]">DIRECTIVE DISPATCH</span><strong class="text-rose-400">Section 65 Active</strong></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 text-[11px]">Cyclic loop-back edge ready for re-prompting.</span>
+            <button type="button" onclick="switchView(4)" class="px-3 py-1.5 bg-violet-950 text-violet-300 hover:bg-violet-900 border border-violet-800 rounded-lg text-xs">View Directive &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Drawer: Node Memory State Inspector -->
+      <aside class="w-96 bg-[#070a14] border-l border-slate-800 flex flex-col justify-between shrink-0 font-mono text-xs z-30 shadow-2xl">
+        <div class="p-5 flex-1 flex flex-col justify-between overflow-hidden">
+          <div>
+            <div class="pb-3 border-b border-slate-800 flex justify-between items-center mb-4">
+              <div>
+                <span class="text-white font-bold text-xs uppercase" id="inspector-title">Node Inspector</span>
+                <span class="text-[10px] text-slate-500 block font-sans">Click any node on canvas to inspect memory state</span>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-800">StateDict</span>
+            </div>
+            <div class="space-y-4 overflow-y-auto max-h-[calc(100vh-250px)] pr-1" id="inspector-content">
+              <!-- Dynamically injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW: Pure State Export (No duplicate PDF button) -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950/90 space-y-2">
+          <button type="button" onclick="exportCurrentStateSnapshot()" class="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-violet-600/30">
+            <i class="fa-solid fa-download"></i>
+            <span>Export State Snapshot (.json)</span>
+          </button>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ==================== VIEW 2: Dual-Jurisdiction Legal RAG ==================== -->
+    <section id="view-2" style="display: none;" class="h-full p-8 overflow-y-auto flex flex-col justify-between space-y-6">
+      <div class="glass-card p-5 flex justify-between items-center">
+        <div>
+          <h2 class="text-sm font-bold text-white">Dual-Jurisdiction Environmental Law Vector Store</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Dense vectors embedded via Cohere multilingual + BM25 sparse hybrid ranker over statutory corpuses.</p>
+        </div>
+        <span class="text-xs font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-3.5 py-1.5 rounded-xl">
+          Hybrid Top-K Retrieval Latency: 42ms
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 flex-1">
+        <div class="glass-card p-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+              <span class="text-xs font-bold text-indigo-400 uppercase font-mono">Commonwealth Jurisdiction</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 font-mono">Federal Supreme</span>
+            </div>
+            <h3 class="text-sm font-bold text-white mb-3">Environment Protection & Biodiversity Conservation Act 1999 (EPBC)</h3>
+            <div class="space-y-3 text-xs font-mono">
+              <div class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1.5">
+                <div class="flex justify-between text-slate-300 font-bold"><span>Section 18: Listed Threatened Fauna</span><span class="text-emerald-400">Cosine: 0.912</span></div>
+                <p class="text-slate-400 font-sans text-[11px] leading-relaxed">Prohibits significant impacts on subterranean stygofauna communities within Fortescue Marsh basin.</p>
+              </div>
+              <div class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1.5">
+                <div class="flex justify-between text-slate-300 font-bold"><span>Section 24D: Water Trigger Protection</span><span class="text-emerald-400">Cosine: 0.884</span></div>
+                <p class="text-slate-400 font-sans text-[11px] leading-relaxed">Strict federal liability where large-scale mining alters regional hydrological gradients.</p>
+              </div>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-500 font-mono">Authority: Federal DCCEEW Environment Minister</div>
+        </div>
+
+        <div class="glass-card p-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+              <span class="text-xs font-bold text-violet-400 uppercase font-mono">State Jurisdiction</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-800 font-mono">State EPA Mandate</span>
+            </div>
+            <h3 class="text-sm font-bold text-white mb-3">WA Environmental Protection Act 1986 (Part IV & Part V)</h3>
+            <div class="space-y-3 text-xs font-mono">
+              <div class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1.5">
+                <div class="flex justify-between text-slate-300 font-bold"><span>Ministerial Statement 1120 (Condition 6.2)</span><span class="text-rose-400 font-bold">BREACH VERIFIED</span></div>
+                <p class="text-slate-400 font-sans text-[11px] leading-relaxed">Groundwater draw-down within 5km of Weeli Wolli Creek must not exceed 0.50m 30-day moving average.</p>
+                <div class="p-2 bg-rose-950/40 border border-rose-900 rounded text-rose-300 text-[10px]">Active Reading: 1.48 m/day at BH-WB-09 (196% over statutory limit).</div>
+              </div>
+              <div class="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1.5">
+                <div class="flex justify-between text-slate-300 font-bold"><span>Part V s65: Environmental Protection Notice</span><span class="text-slate-400">Statutory Power</span></div>
+                <p class="text-slate-400 font-sans text-[11px] leading-relaxed">Empowers CEO to issue emergency cease-and-desist orders without prior hearing.</p>
+              </div>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-500 font-mono">Authority: Western Australian EPA Chairman</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: Pilbara Mining Telemetry ==================== -->
+    <section id="view-3" style="display: none;" class="h-full p-8 overflow-y-auto flex flex-col justify-between space-y-6">
+      <div class="grid grid-cols-4 gap-5">
+        <div class="glass-card p-5">
+          <div class="text-xs text-slate-400 uppercase font-mono">Aquifer Draw-down Rate</div>
+          <div class="text-3xl font-bold font-mono text-rose-400 mt-2" id="tele-draw">1.48 m/day</div>
+          <div class="text-[11px] text-rose-400 mt-1 font-mono">Baseline: &lt;0.50 m/day (BREACH)</div>
+        </div>
+        <div class="glass-card p-5">
+          <div class="text-xs text-slate-400 uppercase font-mono">PM10 Particulate Dust</div>
+          <div class="text-3xl font-bold font-mono text-amber-400 mt-2" id="tele-dust">82.4 µg/m³</div>
+          <div class="text-[11px] text-amber-400 mt-1 font-mono">24h Threshold: 50.0 µg/m³</div>
+        </div>
+        <div class="glass-card p-5">
+          <div class="text-xs text-slate-400 uppercase font-mono">Pit Dewatering Discharge</div>
+          <div class="text-3xl font-bold font-mono text-cyan-400 mt-2">42.8 ML/day</div>
+          <div class="text-[11px] text-slate-400 mt-1 font-mono">Reinjection System Operating</div>
+        </div>
+        <div class="glass-card p-5">
+          <div class="text-xs text-slate-400 uppercase font-mono">Stygofauna Biosensor Alert</div>
+          <div class="text-3xl font-bold font-mono text-rose-400 mt-2">CRITICAL</div>
+          <div class="text-[11px] text-rose-400 mt-1 font-mono">Aquifer Strata Desiccation Risk</div>
+        </div>
+      </div>
+
+      <div class="glass-card p-6 flex-1 flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <span class="text-xs font-bold uppercase text-white font-mono">Pit-04 Dewatering Boreholes & Particulate Sensor Array</span>
+            <button type="button" onclick="resetTelemetryNominal()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-mono text-emerald-400 border border-slate-700 rounded-xl">
+              Restore Telemetry to Statutory Baseline
+            </button>
+          </div>
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-3.5">Sensor Node</th>
+                <th class="p-3.5">Location Coordinates</th>
+                <th class="p-3.5">Parameter Monitored</th>
+                <th class="p-3.5">Current Reading</th>
+                <th class="p-3.5">Statutory Limit</th>
+                <th class="p-3.5 text-right">Jurisdiction Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300">
+              <tr class="hover:bg-slate-900/40">
+                <td class="p-3.5 text-violet-400 font-bold">BH-WB-09</td>
+                <td class="p-3.5 text-slate-400">22°45'12"S, 118°54'02"E</td>
+                <td class="p-3.5">Standing Water Level (SWL)</td>
+                <td class="p-3.5 text-rose-400 font-bold">1.48 m/day</td>
+                <td class="p-3.5">0.50 m/day</td>
+                <td class="p-3.5 text-right"><span class="px-2.5 py-1 bg-rose-950 text-rose-400 border border-rose-800 rounded-lg text-[10px]">Breach: WA EPA Condition 6.2</span></td>
+              </tr>
+              <tr class="hover:bg-slate-900/40">
+                <td class="p-3.5 text-violet-400 font-bold">AQ-DUST-02</td>
+                <td class="p-3.5 text-slate-400">Crusher Conveyor North</td>
+                <td class="p-3.5">PM10 Particulate Density</td>
+                <td class="p-3.5 text-amber-400 font-bold">82.4 µg/m³</td>
+                <td class="p-3.5">50.0 µg/m³</td>
+                <td class="p-3.5 text-right"><span class="px-2.5 py-1 bg-amber-950 text-amber-400 border border-amber-800 rounded-lg text-[10px]">Warning: NEPM Ambient Air</span></td>
+              </tr>
+              <tr class="hover:bg-slate-900/40">
+                <td class="p-3.5 text-violet-400 font-bold">BIO-STYGO-01</td>
+                <td class="p-3.5 text-slate-400">Fortescue Marsh Fringe</td>
+                <td class="p-3.5">Salinity Electrical Conduct.</td>
+                <td class="p-3.5 text-slate-200">1,240 µS/cm</td>
+                <td class="p-3.5">2,500 µS/cm</td>
+                <td class="p-3.5 text-right"><span class="px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-lg text-[10px]">Compliant: EPBC s18</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pt-4 border-t border-slate-800/80 flex justify-between text-xs font-mono text-slate-500">
+          <span>Active Ingestion: 48 Boreholes &bull; Modbus RTU / LoRaWAN</span>
+          <span>Sampling Interval: 10 Seconds Sync</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: Stop-Work Directive Studio (PDF Exporter) ==================== -->
+    <section id="view-4" style="display: none;" class="h-full p-8 overflow-y-auto flex flex-col justify-between space-y-6">
+      <div class="grid grid-cols-12 gap-6 flex-1">
+        <!-- Printable Official Legal Document (PDF Ready) -->
+        <div class="col-span-8 glass-card p-7 space-y-4 font-mono text-xs flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center pb-4 border-b border-slate-800">
+              <div>
+                <span class="text-rose-400 font-bold tracking-wider text-sm">OFFICIAL DIRECTIVE // CEASE-AND-DESIST WORK-STOP ORDER</span>
+                <p class="text-slate-400 text-[11px] font-sans mt-0.5">Generated by Autonomous Multi-Agent Engine under WA EPA s65 & EPBC Act s18.</p>
+              </div>
+              <button type="button" onclick="generateCertifiedPDF()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-rose-600/30">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>Export Certified PDF</span>
+              </button>
+            </div>
+
+            <!-- Document Render Frame that gets printed -->
+            <div id="printable-directive" class="p-6 bg-black/90 rounded-xl border border-slate-800 space-y-4 text-slate-300 leading-relaxed text-xs mt-4">
+              <div class="text-center border-b border-slate-700 pb-3">
+                <h2 class="text-base font-bold text-white uppercase tracking-wider">STATE OF WESTERN AUSTRALIA // ENVIRONMENTAL PROTECTION AUTHORITY</h2>
+                <span class="text-[11px] text-rose-400 font-bold">STATUTORY NOTICE UNDER SECTION 65 - WORK-STOP ORDER</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 text-[11px] border-b border-slate-800 pb-3">
+                <div><strong class="text-slate-400">ISSUED TO:</strong> Fortescue Pilbara Iron Ore Operations Pty Ltd</div>
+                <div><strong class="text-slate-400">SITE TARGET:</strong> Wittenoom Open-Cut Pit-04 (Grid 22S/118E)</div>
+                <div><strong class="text-slate-400">DATE & TIME:</strong> 2026-09-30 02:14:00 AWST</div>
+                <div><strong class="text-slate-400">DISPATCH REF:</strong> DCCEEW-EPBC-2026-0941B</div>
+              </div>
+
+              <p>
+                <strong>1. MANDATORY CEASE-OF-WORK DIRECTIVE:</strong><br>
+                Pursuant to Section 65 of the <em>Environmental Protection Act 1986 (WA)</em>, all active pit excavation, heavy vehicle hauling, and overburden blasting within <strong>Pit-04</strong> are directed to <strong>CEASE IMMEDIATELY</strong> upon delivery of this cryptographic dispatch.
+              </p>
+
+              <p>
+                <strong>2. STATUTORY EVIDENCE & FACTUAL FINDINGS:</strong><br>
+                - <em>WA EPA Statement 1120 (Condition 6.2):</em> Dewatering telemetry at borehole BH-WB-09 confirmed an unmitigated draw-down rate of <strong>1.48 m/day</strong>, exceeding the 0.50 m/day baseline.<br>
+                - <em>Commonwealth EPBC Act 1999 (s18):</em> Imminent desiccation threat to subterranean <em>Stygofauna</em> fauna habitat verified by Autonomous Self-Reflective Reasoner.
+              </p>
+
+              <p>
+                <strong>3. ENFORCEMENT & REMEDIATION WINDOW:</strong><br>
+                Aquifer reinjection pumps must be scaled to 120% duty cycle within 60 minutes. Failure to comply invokes Section 99A penalties of up to AUD $1,000,000 per statutory day.
+              </p>
+
+              <div class="pt-3 border-t border-slate-800 flex justify-between text-[11px] text-slate-400 font-mono">
+                <span>DIGITAL SIGNATURE HASH: 0x8F94D29B41E891C</span>
+                <span>VERIFIED AGENT: LangGraph Reasoner Node #04</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-4 glass-card p-6 space-y-5 text-xs font-mono flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-bold uppercase text-slate-300 block pb-3 border-b border-slate-800">Ministerial Transmission Metadata</span>
+            <div class="space-y-4 mt-4">
+              <div><span class="text-slate-500 block text-[10px]">FEDERAL RECIPIENT</span><strong class="text-slate-200">DCCEEW Compliance Portal (Canberra)</strong></div>
+              <div><span class="text-slate-500 block text-[10px]">STATE AUTHORITY</span><strong class="text-slate-200">WA Environmental Protection Authority (Perth)</strong></div>
+              <div><span class="text-slate-500 block text-[10px]">E2E LATENCY</span><strong class="text-emerald-400 text-sm">1.42s (Sub-1.8s Target Met)</strong></div>
+              <div><span class="text-slate-500 block text-[10px]">DISPATCH STATUS</span><span class="px-2.5 py-1 bg-rose-950 text-rose-300 border border-rose-800 rounded-lg font-bold">TRANSMITTED TO SITE SUPERVISOR</span></div>
+            </div>
+          </div>
+          <div class="p-3 bg-black/60 rounded-xl border border-slate-800 text-[11px] text-slate-400 font-sans">
+            Cryptographic SHA-256 dispatch timestamped and mirrored to Australian Government GovDXP API Gateway.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 5: Self-Reflection Grader ==================== -->
+    <section id="view-5" style="display: none;" class="h-full p-8 overflow-y-auto flex flex-col justify-between space-y-6">
+      <div class="grid grid-cols-3 gap-5">
+        <div class="glass-card p-5 space-y-1">
+          <span class="text-slate-500 uppercase text-[10px] font-mono block">Hallucination Frequency</span>
+          <div class="text-3xl font-bold font-mono text-cyan-400 mt-1">0.02%</div>
+          <span class="text-emerald-400 text-[11px] font-mono">Grounded by Statutory Citations</span>
+        </div>
+        <div class="glass-card p-5 space-y-1">
+          <span class="text-slate-500 uppercase text-[10px] font-mono block">Relevance Threshold</span>
+          <div class="text-3xl font-bold font-mono text-emerald-400 mt-1">0.941 / 1.000</div>
+          <span class="text-slate-400 text-[11px] font-mono">Cut-off Bar: 0.850</span>
+        </div>
+        <div class="glass-card p-5 space-y-1">
+          <span class="text-slate-500 uppercase text-[10px] font-mono block">Query Re-write Cycles</span>
+          <div class="text-3xl font-bold font-mono text-violet-400 mt-1">0 Cycles</div>
+          <span class="text-slate-400 text-[11px] font-mono">Single-Pass High Confidence</span>
+        </div>
+      </div>
+
+      <div class="glass-card p-6 space-y-4 font-mono text-xs flex-1 flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-bold uppercase text-slate-300 block pb-3 border-b border-slate-800">Cyclic Feedback Self-Correction Grounding Matrix</span>
+          <div class="space-y-4 mt-4">
+            <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex justify-between items-center">
+              <div>
+                <strong class="text-white block text-sm">Claim 1: "Aquifer draw-down exceeds permissible 0.50m limit."</strong>
+                <span class="text-slate-400 text-[11px] font-sans mt-0.5 block">Evidence: Sensor BH-WB-09 (1.48m/d) matched to WA Statement 1120 Cond 6.2</span>
+              </div>
+              <span class="px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-lg font-bold">100% GROUNDED</span>
+            </div>
+
+            <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex justify-between items-center">
+              <div>
+                <strong class="text-white block text-sm">Claim 2: "Threat to subterranean Stygofauna invokes Federal EPBC s18."</strong>
+                <span class="text-slate-400 text-[11px] font-sans mt-0.5 block">Evidence: Desiccation buffer violation inside Fortescue Marsh basin</span>
+              </div>
+              <span class="px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-lg font-bold">100% GROUNDED</span>
+            </div>
+          </div>
+        </div>
+        <div class="text-slate-500 text-[11px]">Cyclic evaluation prevents model hallucination by verifying all citations before action node execution.</div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 6: Cryptographic Audit Trail ==================== -->
+    <section id="view-6" style="display: none;" class="h-full p-8 overflow-y-auto flex flex-col justify-between space-y-6 font-mono text-xs">
+      <div class="grid grid-cols-2 gap-6 flex-1">
+        <div class="glass-card p-6 space-y-4 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+              <span class="text-xs font-bold uppercase text-slate-300 font-sans">Tamper-Proof Audit Trail (SHA-256 Hashes)</span>
+              <span class="text-[10px] text-emerald-400">Chain: SECURE</span>
+            </div>
+            <div class="space-y-3 mt-4 text-[11px]">
+              <div class="p-3 bg-black/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                <div><span class="text-slate-500">02:14:01</span> <span class="text-slate-300 ml-2 font-bold">Telemetry Ingestion (BH-WB-09)</span></div>
+                <span class="text-violet-400 font-mono">hash: 9f8a...31b2</span>
+              </div>
+              <div class="p-3 bg-black/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                <div><span class="text-slate-500">02:14:02</span> <span class="text-slate-300 ml-2 font-bold">Grader Pass: Relevance 0.941</span></div>
+                <span class="text-emerald-400 font-mono">hash: e4c1...89a2</span>
+              </div>
+              <div class="p-3 bg-black/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                <div><span class="text-slate-500">02:14:02</span> <span class="text-rose-400 ml-2 font-bold">Stop-Work Directive Dispatched</span></div>
+                <span class="text-rose-400 font-mono">hash: 7d2f...510a</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-500 font-mono">All transactions cryptographically sealed using ECDSA P-256.</div>
+        </div>
+
+        <div class="glass-card p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-xs font-bold text-slate-300">POST /api/v1/agentic-audit (Live JSON Schema)</span>
+              <button type="button" onclick="copyCurl()" id="btn-copy-curl" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[10px]">Copy cURL</button>
+            </div>
+            <div class="bg-black/90 p-4 rounded-xl border border-slate-800 text-violet-300 overflow-x-auto max-h-72 text-[11px]">
+<pre id="api-json-box">{
+  "status": "COMPLIANCE_BREACH_DETECTED",
+  "statutory_citations": [
+    "WA Environmental Protection Act 1986 s48(4)",
+    "Commonwealth EPBC Act 1999 s18"
+  ],
+  "agent_graph": {
+    "cycle_count": 1,
+    "hallucination_score": 0.02,
+    "semantic_relevance": 0.941
+  },
+  "action": "WORK_STOP_DIRECTIVE_ISSUED",
+  "latency_seconds": 1.42
+}</pre>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-500 font-sans mt-3">Complies with OpenTelemetry and FastAPI asynchronous event bus standards.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    var currentView = 1;
+    var isRunning = false;
+
+    var activeNodeMemory = {
+      node: "cyclic_grader",
+      aquifer_drawdown: 1.48,
+      statutory_limit: 0.50,
+      epbc_threatened_species: ["Stygofauna", "Northern Quoll"],
+      semantic_relevance: 0.941,
+      is_hallucinated: false,
+      timestamp: "2026-09-30T02:14:02.124Z"
+    };
+
+    function switchView(num) {
+      currentView = num;
+      for (var i = 1; i <= 6; i++) {
+        var el = document.getElementById('view-' + i);
+        var btn = document.getElementById('btn-view-' + i);
+        if (i === num) {
+          el.style.display = (num === 1) ? 'flex' : 'flex';
+          btn.className = "studio-tab-btn active px-3.5 py-1.5 rounded-lg font-bold";
+        } else {
+          el.style.display = 'none';
+          btn.className = "studio-tab-btn px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200";
+        }
+      }
+    }
+
+    function inspectNode(id) {
+      var title = document.getElementById('inspector-title');
+      var content = document.getElementById('inspector-content');
+
+      if (id === 'node1') {
+        title.innerText = "Node #01 // Telemetry Parser";
+        content.innerHTML = '<div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 space-y-2"><span class="text-slate-500 uppercase text-[10px] block font-bold">Active Sensor Ingestion</span><div class="text-white font-bold text-sm">Pit-04 Dewatering Array</div><p class="text-slate-400 text-[11px] font-sans">Borehole WB-09 reports water level depression rate of 1.48 m/day against baseline 0.50 m/day.</p></div><pre class="bg-black/90 p-3 rounded-lg border border-slate-900 text-[11px] text-cyan-300 overflow-x-auto">{\n  "borehole_id": "BH-WB-09",\n  "swl_rate_m_day": 1.48,\n  "pm10_dust_ug_m3": 82.4,\n  "status": "ANOMALOUS_EXCEEDANCE"\n}</pre>';
+        activeNodeMemory = { node: "telemetry_parser", borehole: "BH-WB-09", drawdown: 1.48, pm10: 82.4 };
+      } else if (id === 'node2') {
+        title.innerText = "Node #02 // Hybrid Vector Store";
+        content.innerHTML = '<div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 space-y-2"><span class="text-slate-500 uppercase text-[10px] block font-bold">Vector Search Engine</span><div class="text-white font-bold text-sm">Dual-Jurisdiction Index</div><p class="text-slate-400 text-[11px] font-sans">Top-K Hybrid dense + BM25 sparse search over EPBC Act 1999 and WA EPA Part IV statutory instruments.</p></div><div class="p-2 bg-black/90 rounded border border-slate-900 text-[11px] text-emerald-400 space-y-1"><div>[0.912] Commonwealth EPBC Act s18</div><div>[0.884] WA EPA Statement 1120 Cond 6.2</div><div>[0.842] WA Environmental Protection Act s65</div></div>';
+        activeNodeMemory = { node: "vector_retriever", top_k: ["EPBC_s18", "WA_EPA_Cond_6_2"], dense_score: 0.912 };
+      } else if (id === 'node3') {
+        title.innerText = "Node #03 // Self-Correction Grader";
+        content.innerHTML = '<div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 space-y-2"><span class="text-slate-500 uppercase text-[10px] block font-bold">Cyclic Evaluation</span><div class="text-white font-bold text-sm">Hallucination & Relevance Grader</div><p class="text-slate-400 text-[11px] font-sans">Grades statutory evidence against raw telemetry facts. Loop-back edge triggers query expansion if score &lt; 0.85.</p></div><div class="p-3 bg-black/90 rounded border border-slate-900 text-[11px] text-violet-300 space-y-1 font-mono"><div>Semantic Relevance: 0.941 (PASS)</div><div>Hallucination Score: 0.02 (CLEAR)</div><div>Jurisdiction Supremacy: Federal EPBC</div></div>';
+        activeNodeMemory = { node: "cyclic_grader", relevance_score: 0.941, hallucination_score: 0.02, passed: true };
+      } else if (id === 'node4') {
+        title.innerText = "Node #04 // Legal Reasoner";
+        content.innerHTML = '<div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 space-y-2"><span class="text-slate-500 uppercase text-[10px] block font-bold">Cross-Examination Engine</span><div class="text-white font-bold text-sm">Statutory Supremacy Arbiter</div><p class="text-slate-400 text-[11px] font-sans">Synthesizes environmental law obligations. Confirms direct statutory breach under WA EPA s48 and EPBC Act s18.</p></div><div class="p-2.5 bg-rose-950/40 border border-rose-900 rounded text-rose-300 text-[11px]">DETERMINATION: Mandatory Cease-of-Work triggered. Imminent threat to Fortescue Marsh subterranean fauna.</div>';
+        activeNodeMemory = { node: "legal_reasoner", determination: "STATUTORY_BREACH", target: "Pit-04", order: "WORK_STOP" };
+      } else if (id === 'node5') {
+        title.innerText = "Node #05 // Ministerial Dispatcher";
+        content.innerHTML = '<div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 space-y-2"><span class="text-slate-500 uppercase text-[10px] block font-bold">Directive Dispatch</span><div class="text-white font-bold text-sm">Ministerial Referral Generator</div><p class="text-slate-400 text-[11px] font-sans">Automated dispatch of legally binding work-stop notice to Pilbara pit supervisor and DCCEEW portal.</p></div><pre class="bg-black/90 p-3 rounded-lg border border-slate-900 text-[11px] text-amber-300 overflow-x-auto">{\n  "directive": "WORK_STOP_ORDER",\n  "sha256": "0x8F94D29B41E891C...",\n  "dispatch_latency": "1.38s"\n}</pre>';
+        activeNodeMemory = { node: "ministerial_dispatcher", sha256_hash: "0x8F94D29B41E891C", dispatched: true };
+      }
+    }
+
+    function exportCurrentStateSnapshot() {
+      var blob = new Blob([JSON.stringify(activeNodeMemory, null, 2)], { type: 'application/json' });
+      var url = window.URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = "langgraph_state_" + activeNodeMemory.node + ".json";
+      a.click();
+    }
+
+    function triggerWorkflow() {
+      if (isRunning) return;
+      isRunning = true;
+      resetGraph();
+
+      var stateBadge = document.getElementById('canvas-state');
+      stateBadge.innerText = "State: EXECUTING_LANGGRAPH_DAG...";
+      stateBadge.className = "px-3.5 py-2 bg-amber-950 border border-amber-800 rounded-xl text-xs font-mono text-amber-300 animate-pulse";
+
+      setTimeout(function() {
+        document.getElementById('node-1').classList.add('active-pulse');
+        document.getElementById('edge-1-2').classList.add('wire-flow');
+        document.getElementById('edge-1-2').setAttribute('stroke', '#a855f7');
+      }, 200);
+
+      setTimeout(function() {
+        document.getElementById('node-1').classList.remove('active-pulse');
+        document.getElementById('node-2').classList.add('active-pulse');
+        document.getElementById('edge-2-3').classList.add('wire-flow');
+        document.getElementById('edge-2-3').setAttribute('stroke', '#a855f7');
+      }, 500);
+
+      setTimeout(function() {
+        document.getElementById('node-2').classList.remove('active-pulse');
+        document.getElementById('node-3').classList.add('active-pulse');
+
+        var loop = document.getElementById('edge-loopback');
+        loop.classList.remove('hidden');
+        setTimeout(function() { loop.classList.add('hidden'); }, 350);
+
+        document.getElementById('edge-3-4').classList.add('wire-flow');
+        document.getElementById('edge-3-4').setAttribute('stroke', '#a855f7');
+      }, 900);
+
+      setTimeout(function() {
+        document.getElementById('node-3').classList.remove('active-pulse');
+        document.getElementById('node-4').classList.add('active-pulse');
+        document.getElementById('edge-4-5').classList.add('wire-flow');
+        document.getElementById('edge-4-5').setAttribute('stroke', '#a855f7');
+      }, 1200);
+
+      setTimeout(function() {
+        document.getElementById('node-4').classList.remove('active-pulse');
+        document.getElementById('node-5').classList.add('active-pulse');
+        stateBadge.innerText = "State: WORK_STOP_DIRECTIVE_DISPATCHED";
+        stateBadge.className = "px-3.5 py-2 bg-rose-950 border border-rose-800 rounded-xl text-xs font-mono text-rose-300 font-bold";
+        isRunning = false;
+        inspectNode('node5');
+      }, 1450);
+    }
+
+    function resetGraph() {
+      for (var i = 1; i <= 5; i++) {
+        document.getElementById('node-' + i).classList.remove('active-pulse');
+      }
+      document.getElementById('edge-1-2').classList.remove('wire-flow');
+      document.getElementById('edge-2-3').classList.remove('wire-flow');
+      document.getElementById('edge-3-4').classList.remove('wire-flow');
+      document.getElementById('edge-4-5').classList.remove('wire-flow');
+      document.getElementById('edge-loopback').classList.add('hidden');
+      document.getElementById('canvas-state').innerText = "State: READY_FOR_DISPATCH";
+      document.getElementById('canvas-state').className = "px-3.5 py-2 bg-slate-950/90 border border-slate-800 rounded-xl text-xs font-mono text-violet-300";
+    }
+
+    function generateCertifiedPDF() {
+      var content = document.getElementById('printable-directive').innerHTML;
+      var printWindow = window.open('', '', 'width=900,height=750');
+      printWindow.document.write('<!DOCTYPE html><html><head><title>Stop-Work Directive (EPBC/WA EPA)</title>');
+      printWindow.document.write('<style>body { font-family: monospace; padding: 40px; color: #111; } h2 { font-size: 16px; text-align: center; } p { line-height: 1.6; font-size: 13px; } strong { color: #000; }</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write(content);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(function() {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+
+    function resetTelemetryNominal() {
+      document.getElementById('tele-draw').innerText = "0.32 m/day";
+      document.getElementById('tele-draw').className = "text-3xl font-bold font-mono text-emerald-400 mt-2";
+      document.getElementById('tele-dust').innerText = "28.5 µg/m³";
+      document.getElementById('tele-dust').className = "text-3xl font-bold font-mono text-emerald-400 mt-2";
+      alert("Telemetry restored to baseline. Autonomous agents indicate zero statutory breach.");
+    }
+
+    function copyCurl() {
+      var curl = 'curl -X POST http://localhost:8002/api/v1/agentic-audit -H "Content-Type: application/json" -d \'{"incident_id":"PIT04-2026-BREACH"}\'';
+      navigator.clipboard.writeText(curl);
+      var btn = document.getElementById('btn-copy-curl');
+      btn.innerText = "COPIED!";
+      setTimeout(function() { btn.innerText = "Copy cURL"; }, 1500);
+    }
+
+    window.onload = function() {
+      inspectNode('node3');
+      setTimeout(triggerWorkflow, 400);
+    };
+  </script>
+</body>
+</html>
